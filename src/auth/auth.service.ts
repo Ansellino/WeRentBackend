@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs'
 import { PrismaService } from '../prisma/prisma.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
+import { Role } from 'src/generated/prisma/enums'
  
 @Injectable()
 export class AuthService {
@@ -44,7 +45,7 @@ export class AuthService {
     })
   }
  
-  private signToken(userId: string, email: string, role: string) {
+  private signToken(userId: string, email: string, role: Role) {
     return this.jwt.sign({ sub: userId, email, role })
   }
 }
