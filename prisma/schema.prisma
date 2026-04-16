@@ -1,13 +1,172 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ── Enums ────────────────────────────────────────────────────
+enum Role {
+  USER
+  ADMIN
+}
+ 
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+ 
+enum FitType {
+  small
+  true
+  large
+}
+ 
+// ── User ─────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  cart      CartItem[]
+  orders    Order[]
+  reviews   Review[]
+  helpfuls  ReviewHelpful[]
+  wishlist  WishlistItem[]
+}
+ 
+// ── Product ──────────────────────────────────────────────────
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  pricePerDay Int      // stored in IDR (integer, no decimals)
+  category    String
+  images      String[]
+  sizes       String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+ 
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+  wishlist    WishlistItem[]
+}
+ 
+// ── Cart ─────────────────────────────────────────────────────
+model CartItem {
+  id         String   @id @default(uuid())
+  userId     String
+  productId  String
+  size       String
+  quantity   Int      @default(1)
+  startDate  DateTime
+  rentalDays Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+ 
+  user    User    @relation(fields:[userId], references:[id], onDelete:Cascade)
+  product Product @relation(fields:[productId], references:[id])
+ 
+  @@unique([userId, productId, size, startDate])
+}
+ 
+// ── Order ─────────────────────────────────────────────────────
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  courierLabel    String
+  courierService  String
+  shippingCost    Int
+  total           Int
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+ 
+  user  User        @relation(fields:[userId], references:[id])
+  items OrderItem[]
+}
+ 
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String
+  size        String
+  quantity    Int
+  startDate   DateTime
+  rentalDays  Int
+  endDate     DateTime
+  subtotal    Int
+ 
+  order   Order   @relation(fields:[orderId], references:[id], onDelete:Cascade)
+  product Product @relation(fields:[productId], references:[id])
+}
+ 
+// ── Review ───────────────────────────────────────────────────
+model Review {
+  id          String   @id @default(uuid())
+  productId   String
+  userId      String
+  rating      Int
+  comment     String
+  fit         FitType
+  bustCm      Int
+  waistCm     Int
+  hipsCm      Int
+  mediaUrls   String[]
+  helpfulCount Int     @default(0)
+  isEdited    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+ 
+  product  Product         @relation(fields:[productId], references:[id])
+  user     User            @relation(fields:[userId], references:[id])
+  helpfuls ReviewHelpful[]
+ 
+  @@unique([productId, userId])  // one review per user per product
+}
+ 
+model ReviewHelpful {
+  id       String @id @default(uuid())
+  reviewId String
+  userId   String
+ 
+  review Review @relation(fields:[reviewId], references:[id], onDelete:Cascade)
+  user   User   @relation(fields:[userId], references:[id])
+ 
+  @@unique([reviewId, userId])   // one helpful per user per review
+}
+ 
+// ── Wishlist ─────────────────────────────────────────────────
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  addedAt   DateTime @default(now())
+ 
+  user    User    @relation(fields:[userId], references:[id], onDelete:Cascade)
+  product Product @relation(fields:[productId], references:[id])
+ 
+  @@unique([userId, productId])
 }
