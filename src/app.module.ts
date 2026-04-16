@@ -4,11 +4,17 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { ShipmentModule } from './shipment/shipment.module';
+import { UploadModule } from './upload/upload.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
-    AuthModule],
+    AuthModule,
+    ShipmentModule,
+    UploadModule,
+    WishlistModule],
   controllers: [AppController],
   providers: [AppService],
 })
