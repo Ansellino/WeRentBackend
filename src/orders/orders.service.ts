@@ -19,12 +19,20 @@ const DUMMY_COURIERS = [
     price: 18000,
   },
   {
-    id: 'jnt-yes',
-    courier: 'JNT',
+    id: 'jne-yes',
+    courier: 'JNE',
     service: 'YES',
-    label: 'J&T Express (1–2 days)',
-    estimatedDays: 2,
-    price: 25000,
+    label: 'JNE YES (next day)',
+    estimatedDays: 1,
+    price: 35000,
+  },
+  {
+    id: 'jnt-reg',
+    courier: 'JNT',
+    service: 'REG',
+    label: 'J&T Express (2–3 days)',
+    estimatedDays: 3,
+    price: 16000,
   },
   {
     id: 'sicepat',
@@ -32,7 +40,15 @@ const DUMMY_COURIERS = [
     service: 'REG',
     label: 'SiCepat Regular (2–3 days)',
     estimatedDays: 3,
-    price: 16000,
+    price: 15000,
+  },
+  {
+    id: 'gosend',
+    courier: 'GOSEND',
+    service: 'SDS',
+    label: 'GoSend Same Day',
+    estimatedDays: 1,
+    price: 28000,
   },
 ];
 
@@ -98,7 +114,7 @@ export class OrdersService {
       const o = await tx.order.create({
         data: {
           userId,
-          status: 'PAID',
+          status: 'COMPLETED',
           shippingAddress: dto.shippingAddress,
           courierLabel: courier.label,
           courierService: courier.service,
