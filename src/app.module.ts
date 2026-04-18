@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { ProductsModule } from './products/products.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
 import { ShipmentModule } from './shipment/shipment.module';
@@ -11,14 +13,18 @@ import { UploadModule } from './upload/upload.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
+    ProductsModule,
+    ReviewsModule,
     OrdersModule,
     CartModule,
     ShipmentModule,
     UploadModule,
-    WishlistModule],
+    WishlistModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
