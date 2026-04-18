@@ -6,13 +6,19 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersModule } from './orders/orders.module';
 import { CartModule } from './cart/cart.module';
+import { ShipmentModule } from './shipment/shipment.module';
+import { UploadModule } from './upload/upload.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
     OrdersModule,
-    CartModule],
+    CartModule,
+    ShipmentModule,
+    UploadModule,
+    WishlistModule],
   controllers: [AppController],
   providers: [AppService],
 })
