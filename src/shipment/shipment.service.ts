@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { CreateShipmentDto } from './dto/create-shipment.dto';
-import { UpdateShipmentDto } from './dto/update-shipment.dto';
 
 const COURIERS = [
   {
