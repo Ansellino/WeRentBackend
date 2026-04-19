@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CheckoutDto } from './dto/checkout.dto';
+import { CheckoutDto } from './dto/req/checkout.dto';
 import { addDays } from 'date-fns';
 
 // Dummy shipment options — replace with real courier API in production
