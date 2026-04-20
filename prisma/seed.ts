@@ -14,7 +14,7 @@ const PRODUCTS = [
     category: "Dress",
     description: "A stunning evening dress perfect for formal events and galas.",
     pricePerDay: 150000,
-    sizes: ['S', 'M', 'L'],
+    sizes: ['S', 'M', 'L'],    
   },
   {
     name: "Floral Wrap Dress",
@@ -231,7 +231,6 @@ async function main() {
           ...product,
           images: [
             `https://placehold.co/400x600?text=${encodeURIComponent(product.name)}`,
-            `https://placehold.co/400x600?text=${encodeURIComponent(product.name)}+2`,
           ],
         },
       })

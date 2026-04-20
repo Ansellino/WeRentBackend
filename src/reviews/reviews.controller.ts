@@ -6,7 +6,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -36,6 +36,31 @@ export class ReviewsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a review' })
   @ApiParam({ name: 'productId', description: 'Product UUID' })
+  @ApiBody({
+    description: 'Review payload',
+    examples: {
+      example1: {
+        summary: 'Basic review',
+        value: {
+          rating: 5,
+          comment: "Dress ini luar biasa, kualitasnya sangat bagus dan potongannya sempurna!",
+          fit: "true",
+          measurements: { bust: 86, waist: 68, hips: 90 },
+          mediaUrls: []
+        }
+      },
+      example2: {
+        summary: 'Review with media',
+        value: {
+          rating: 4,
+          comment: "Kualitas bagus, sedikit ketat di bagian pinggang tapi overall oke.",
+          fit: "small",
+          measurements: { bust: 88, waist: 72, hips: 92 },
+          mediaUrls: ["https://example.com/photo1.jpg"]
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 201, description: 'Review created successfully' })
   @ApiResponse({ status: 403, description: 'REVIEW_NOT_ELIGIBLE — No completed order found' })
   @ApiResponse({ status: 409, description: 'ALREADY_REVIEWED — User already reviewed this product' })
@@ -52,6 +77,25 @@ export class ReviewsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Edit own review' })
   @ApiParam({ name: 'reviewId', description: 'Review UUID' })
+  @ApiBody({
+    description: 'Fields to update (all optional)',
+    examples: {
+      example1: {
+        summary: 'Update rating and comment',
+        value: {
+          rating: 4,
+          comment: "Setelah dipikir lagi, dress ini memang bagus tapi sizing agak kecil.",
+          fit: "small"
+        }
+      },
+      example2: {
+        summary: 'Update comment only',
+        value: {
+          comment: "Update: setelah dicuci bahannya tetap bagus, highly recommended!"
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 200, description: 'Review updated successfully' })
   @ApiResponse({ status: 403, description: 'FORBIDDEN — Cannot edit another user\'s review' })
   @ApiResponse({ status: 404, description: 'NOT_FOUND — Review not found' })
