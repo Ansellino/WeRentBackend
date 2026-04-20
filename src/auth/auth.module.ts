@@ -26,7 +26,6 @@ import { PrismaService } from 'src/prisma/prisma.service'
         return {
           secret,
           signOptions: {
-            // ✅ type-safe, tanpa any
             expiresIn: expiresIn as SignOptions['expiresIn'],
           },
         }
