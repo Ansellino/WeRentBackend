@@ -3,7 +3,10 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateCartItemDto {
-  @ApiPropertyOptional({ description: 'The updated quantity of the item' })
+  @ApiPropertyOptional({
+    description: 'The updated quantity of the item',
+    example: 2,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -18,7 +21,10 @@ export class UpdateCartItemDto {
   @IsDateString()
   startDate?: string;
 
-  @ApiPropertyOptional({ description: 'The updated duration of the rental' })
+  @ApiPropertyOptional({
+    description: 'The updated duration of the rental',
+    example: 2,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

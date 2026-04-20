@@ -21,9 +21,10 @@ export class CheckoutDto {
   @ApiProperty({
     example: 'jne-reg',
     description:
-      'The ID of the selected courier service (e.g., jne-reg, jnt-yes).',
+      'The ID of the selected courier service. Available: jne-reg, jne-yes, jnt-reg, sicepat, gosend.',
   })
   @IsString()
   @IsNotEmpty()
+  @IsIn(['jne-reg', 'jne-yes', 'jnt-reg', 'sicepat', 'gosend'])
   courierId!: string;
 }

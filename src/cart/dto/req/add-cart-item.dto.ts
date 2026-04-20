@@ -10,17 +10,17 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddCartItemDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'product-uuid' })
   @IsString()
   @IsNotEmpty()
   productId!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'M' })
   @IsString()
   @IsNotEmpty()
   size!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -30,7 +30,7 @@ export class AddCartItemDto {
   @IsDateString()
   startDate!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 3 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
