@@ -68,3 +68,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # prisma local sqlite files (only used if datasource is sqlite)
 /prisma/dev.db
 /prisma/dev.db-journal
+
+#images
+/images
