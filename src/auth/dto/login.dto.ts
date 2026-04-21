@@ -18,7 +18,7 @@ export class LoginDto {
   @ApiProperty({ example: 'password123' })
   @IsString()
   @IsNotEmpty()
-  @MinLength(6, { message: 'Password minimal 6 karakter' })
+  @MinLength(8, { message: 'Password minimal 8 karakter' })
   @MaxLength(100)
   @Transform(({ value }) => value?.trim())
   password!: string
