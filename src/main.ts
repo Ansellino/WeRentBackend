@@ -28,17 +28,14 @@ function getAllowedOrigins(): string[] {
     ...collectOriginsFromEnv(process.env.CORS_ORIGINS),
   ].map(normalizeOrigin);
 
+  const localDevOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) {
     configuredOrigins.push(normalizeOrigin(`https://${vercelUrl}`));
   }
 
-  if (configuredOrigins.length > 0) {
-    return Array.from(new Set(configuredOrigins));
-  }
-
-  // Default local dev origins when env vars are not provided.
-  return ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  return Array.from(new Set([...configuredOrigins, ...localDevOrigins]));
 }
 
 async function bootstrap() {
