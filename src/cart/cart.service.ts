@@ -6,9 +6,10 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AddCartItemDto } from './dto/add-cart-item.dto';
-import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { AddCartItemDto } from './dto/req/add-cart-item.dto';
+import { UpdateCartItemDto } from './dto/req/update-cart-item.dto';
 import { parseISO, addDays } from 'date-fns';
+import { CartItem } from 'src/generated/prisma/client';
 
 @Injectable()
 export class CartService {
@@ -41,14 +42,12 @@ export class CartService {
       });
   }
 
-  async getCart(userId: string) {
-    const items = await this.prisma.cartItem.findMany({
-      where: { userId },
-      include: {
-        product: { select: { name: true, images: true, pricePerDay: true } },
-      },
-    });
-    const mapped = items.map((i) => ({
+  private formatCartItem(
+    i: CartItem & {
+      product: { name: string; images: string[]; pricePerDay: number };
+    },
+  ) {
+    return {
       id: i.id,
       productId: i.productId,
       productName: i.product.name,
@@ -62,7 +61,17 @@ export class CartService {
         .split('T')[0],
       pricePerDay: i.product.pricePerDay,
       subtotal: i.product.pricePerDay * i.quantity * i.rentalDays,
-    }));
+    };
+  }
+
+  async getCart(userId: string) {
+    const items = await this.prisma.cartItem.findMany({
+      where: { userId },
+      include: {
+        product: { select: { name: true, images: true, pricePerDay: true } },
+      },
+    });
+    const mapped = items.map((i) => this.formatCartItem(i));
     const total = mapped.reduce((s, i) => s + i.subtotal, 0);
     return { items: mapped, total };
   }
@@ -103,12 +112,17 @@ export class CartService {
       },
     });
     if (existing) {
-      return this.prisma.cartItem.update({
+      const updated = await this.prisma.cartItem.update({
         where: { id: existing.id },
         data: { quantity: { increment: dto.quantity } },
+        include: {
+          product: { select: { name: true, images: true, pricePerDay: true } },
+        },
       });
+      return this.formatCartItem(updated);
     }
-    return this.prisma.cartItem.create({
+
+    const newItem = await this.prisma.cartItem.create({
       data: {
         userId,
         productId: dto.productId,
@@ -117,7 +131,12 @@ export class CartService {
         startDate: start,
         rentalDays: dto.rentalDays,
       },
+      include: {
+        product: { select: { name: true, images: true, pricePerDay: true } },
+      },
     });
+
+    return this.formatCartItem(newItem);
   }
 
   async updateItem(userId: string, itemId: string, dto: UpdateCartItemDto) {
@@ -141,10 +160,18 @@ export class CartService {
         // itemId,
       );
 
-    return this.prisma.cartItem.update({
+    const updated = await this.prisma.cartItem.update({
       where: { id: itemId },
-      data: { ...dto, ...(dto.startDate ? { startDate: newStart } : {}) },
+      data: {
+        ...dto,
+        ...(dto.startDate ? { startDate: newStart } : {}),
+      },
+      include: {
+        product: { select: { name: true, images: true, pricePerDay: true } },
+      },
     });
+
+    return this.formatCartItem(updated);
   }
 
   async removeItem(userId: string, itemId: string) {
