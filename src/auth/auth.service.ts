@@ -2,16 +2,16 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { SignOptions } from 'jsonwebtoken';
-import * as bcrypt from 'bcryptjs';
+} from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import { ConfigService } from '@nestjs/config'
+import { SignOptions } from 'jsonwebtoken'
+import * as bcrypt from 'bcryptjs'
 
-import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { Role } from 'src/generated/prisma/enums';
+import { PrismaService } from '../prisma/prisma.service'
+import { RegisterDto } from './dto/register.dto'
+import { LoginDto } from './dto/login.dto'
+import { Role } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class AuthService {
@@ -25,16 +25,16 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
-    });
+    })
 
     if (exists) {
       throw new ConflictException({
         code: 'EMAIL_TAKEN',
         message: 'Email already registered',
-      });
+      })
     }
 
-    const hash = await bcrypt.hash(dto.password, 12);
+    const hash = await bcrypt.hash(dto.password, 12)
 
     const user = await this.prisma.user.create({
       data: {
@@ -50,94 +50,55 @@ export class AuthService {
         role: true,
         avatarUrl: true,
       },
-    });
+    })
 
-    const tokens = await this.generateAndSaveTokens(
-      user.id,
-      user.email,
-      user.role,
-    );
+    const tokens = await this.generateTokens(user.id, user.email, user.role)
+    await this.saveRefreshToken(tokens.refresh_token, user.id)
 
-    return { ...tokens, user };
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      user,
+    }
   }
 
   // ================= LOGIN =================
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-    });
+    })
 
     if (!user) {
       throw new UnauthorizedException({
         code: 'INVALID_CREDENTIALS',
         message: 'Invalid credentials',
-      });
+      })
     }
 
-    const valid = await bcrypt.compare(dto.password, user.password);
+    const valid = await bcrypt.compare(dto.password, user.password)
 
     if (!valid) {
       throw new UnauthorizedException({
         code: 'INVALID_CREDENTIALS',
         message: 'Invalid credentials',
-      });
+      })
     }
 
-    const tokens = await this.generateAndSaveTokens(
+    const tokens = await this.generateTokens(
       user.id,
       user.email,
       user.role,
-    );
+    )
 
-    const { password: _, ...safeUser } = user;
+    await this.saveRefreshToken(tokens.refresh_token, user.id)
 
-    return { ...tokens, user: safeUser };
-  }
+    const { password: _, ...safeUser } = user
 
-  // ================= REFRESH =================
-  async refresh(refreshToken: string) {
-    const savedToken = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-      include: { user: true },
-    });
-
-    if (!savedToken || savedToken.expiresAt < new Date()) {
-      if (savedToken) await this.deleteRefreshToken(refreshToken);
-
-      throw new UnauthorizedException({
-        code: 'INVALID_REFRESH_TOKEN',
-        message: 'Session expired',
-      });
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      user: safeUser,
     }
-
-    // rotation
-    await this.deleteRefreshToken(refreshToken);
-
-    return this.generateAndSaveTokens(
-      savedToken.user.id,
-      savedToken.user.email,
-      savedToken.user.role as Role,
-    );
-  }
-
-  // ================= Update profile =================
-  async updateProfile(userId: string, data: Partial<RegisterDto>) {
-    if (data.email) {
-      const exists = await this.prisma.user.findUnique({
-        where: { email: data.email },
-      });
-    }
-
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { avatarUrl: data.avatarUrl },
-    });
-  }
-
-  // ================= LOGOUT =================
-  async logout(refreshToken: string) {
-    await this.deleteRefreshToken(refreshToken);
-    return { message: 'Logged out successfully' };
   }
 
   // ================= ME =================
@@ -152,55 +113,137 @@ export class AuthService {
         avatarUrl: true,
         createdAt: true,
       },
-    });
+    })
   }
 
-  // ================= HELPER =================
-  private async generateAndSaveTokens(
+  // ================= UPDATE AVATAR =================
+  async updateAvatar(userId: string, avatarUrl: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+      },
+    })
+  }
+
+  // ================= REFRESH =================
+  async refresh(refresh_token: string) {
+    if (!refresh_token) {
+      throw new UnauthorizedException({
+        code: 'NO_TOKEN',
+        message: 'Refresh token required',
+      })
+    }
+
+    const saved = await this.prisma.refreshToken.findUnique({
+      where: { token: refresh_token },
+      include: { user: true },
+    })
+
+    if (!saved || saved.expiresAt < new Date()) {
+      if (saved) await this.deleteRefreshToken(refresh_token)
+
+      throw new UnauthorizedException({
+        code: 'SESSION_EXPIRED',
+        message: 'Session expired',
+      })
+    }
+
+    try {
+      this.jwt.verify(refresh_token, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+      })
+    } catch {
+      await this.deleteRefreshToken(refresh_token)
+
+      throw new UnauthorizedException({
+        code: 'INVALID_REFRESH_TOKEN',
+        message: 'Invalid refresh token',
+      })
+    }
+
+    // 🔥 ROTATION
+    await this.deleteRefreshToken(refresh_token)
+
+    const tokens = await this.generateTokens(
+      saved.user.id,
+      saved.user.email,
+      saved.user.role as Role,
+    )
+
+    await this.saveRefreshToken(tokens.refresh_token, saved.user.id)
+
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      user: {
+        id: saved.user.id,
+        email: saved.user.email,
+        name: saved.user.name,
+        role: saved.user.role,
+        avatarUrl: saved.user.avatarUrl,
+      },
+    }
+  }
+
+  // ================= LOGOUT =================
+  async logout(refresh_token: string) {
+    if (refresh_token) {
+      await this.deleteRefreshToken(refresh_token)
+    }
+
+    return {
+      message: 'Logged out successfully',
+    }
+  }
+
+  // ================= HELPERS =================
+
+  private async generateTokens(
     userId: string,
     email: string,
     role: Role,
   ) {
-    const secret = this.config.get<string>('JWT_SECRET');
-    if (!secret) {
-      throw new Error('JWT_SECRET is not defined');
+    const payload = { sub: userId, email, role }
+
+    const access_token = await this.jwt.signAsync(payload, {
+      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.config.get<string>(
+        'JWT_ACCESS_EXPIRES_IN',
+      ) as SignOptions['expiresIn'],
+    })
+
+    const refresh_token = await this.jwt.signAsync(payload, {
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.config.get<string>(
+        'JWT_REFRESH_EXPIRES_IN',
+      ) as SignOptions['expiresIn'],
+    })
+
+    return {
+      access_token,
+      refresh_token,
     }
+  }
 
-    const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '15m';
-
-    const accessToken = await this.jwt.signAsync(
-      { sub: userId, email, role },
-      {
-        secret,
-        expiresIn: expiresIn as SignOptions['expiresIn'],
-      },
-    );
-
-    const refreshToken = await this.jwt.signAsync(
-      { sub: userId, email, role },
-      {
-        secret,
-        expiresIn: '7d' as SignOptions['expiresIn'],
-      },
-    );
-
+  private async saveRefreshToken(token: string, userId: string) {
     await this.prisma.refreshToken.create({
       data: {
-        token: refreshToken,
+        token,
         userId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
-    });
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
+    })
   }
 
   private async deleteRefreshToken(token: string) {
-    return this.prisma.refreshToken.deleteMany({
+    await this.prisma.refreshToken.deleteMany({
       where: { token },
-    });
+    })
   }
 }
