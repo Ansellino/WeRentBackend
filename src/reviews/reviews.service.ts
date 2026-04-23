@@ -9,7 +9,7 @@ import { isEmpty } from 'class-validator';
 export class ReviewsService {
   constructor (private prisma: PrismaService) {}
 
-  // ===== LISTS =====
+  // ===== LIST REVIEWS =====
   async findAll(productId: string, query: ReviewQueryDto, requestUserId?: string) {
     const { page=1, limit=10, rating, sort='newest', hasMedia } = query
     const skip = (page-1)*limit
@@ -49,26 +49,23 @@ export class ReviewsService {
   }
 
 
-  // ===== CREATE =====
+  // ===== CREATE REVIEW =====
   async create(productId: string, userId: string, dto: CreateReviewDto) {
     // Eligibility: must have a completed order containing this product
     const eligible = await this.prisma.orderItem.findFirst({
       where: {
         productId,
         order: { userId, status: 'COMPLETED' },
+        review: null,
       },
     })
-    if(!eligible) throw new ForbiddenException({ code: 'REVIEW_NOT_ELIGIBLE', message: 'No completed order found for this product' })
-
-    // Duplicate check
-    const existing = await this.prisma.review.findUnique({
-      where: { productId_userId: { productId, userId } },
-    })
-    if(existing) throw new ConflictException({ code: 'ALREADY_REVIEWED', message: 'You already reviewed this product' })
+    if(!eligible) throw new ForbiddenException({ code: 'REVIEW_NOT_ELIGIBLE', message: 'No completed order found for this product or all orders have been reviewed' })
 
     const review = await this.prisma.review.create({
       data: {
-        productId, userId,
+        productId,
+        userId,
+        orderItemId: eligible.id,
         rating: dto.rating,
         comment: dto.comment,
         fit: dto.fit,
@@ -83,7 +80,7 @@ export class ReviewsService {
   }
 
 
-  // ===== UPDATE =====
+  // ===== UPDATE REVIEW =====
   async update(reviewId: string, userId: string, dto: UpdateReviewDto) {
     const review = await this.prisma.review.findUnique({ where: { id: reviewId } })
     if(!review) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Review not found' })
@@ -98,7 +95,7 @@ export class ReviewsService {
   }
 
 
-  // ===== DELETE =====
+  // ===== DELETE REVIEW =====
   async remove(reviewId: string, userId: string) {
     const review = await this.prisma.review.findUnique({ where: { id: reviewId } })
     if(!review) throw new NotFoundException({ code: 'NOT_FOUND', message: 'Review not found' })

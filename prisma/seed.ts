@@ -237,22 +237,24 @@ async function main() {
     )
   )
 
-  // ===== SEED COMPLETED ORDERS (required for review eligibility) =====
+  // ===== SEED COMPLETED ORDERS =====
   console.log('Seeding orders...')
 
-  // For each reviewer (users[1], users[2], users[3]), create completed orders
-  // for the products they will review
   const reviewerProductMap: Record<number, number[]> = {
     1: [0, 1, 6, 7],   // Rina reviews products at index 0,1,6,7
     2: [0, 1, 6, 7],   // Sari reviews products at index 0,1,6,7
     3: [0, 2, 7, 9],   // Mia reviews products at index 0,2,7,9
   }
 
+  // Simpan orderItemId per reviewer per product
+  const orderItemIds: Record<string, Record<number, string>> = {}
   for (const [reviewerIdx, productIdxList] of Object.entries(reviewerProductMap)) {
     const user = users[Number(reviewerIdx)]
+    orderItemIds[reviewerIdx] = {}
+
     for (const productIdx of productIdxList) {
       const product = products[productIdx]
-      await prisma.order.create({
+      const order = await prisma.order.create({
         data: {
           userId: user.id,
           status: OrderStatus.COMPLETED,
@@ -274,7 +276,9 @@ async function main() {
             },
           },
         },
+        include: { items: true }, // ← ambil orderItemId
       })
+      orderItemIds[reviewerIdx][productIdx] = order.items[0].id
     }
   }
 
@@ -283,10 +287,13 @@ async function main() {
   for (const r of REVIEWS_DATA) {
     const user = users[r.reviewerIndex]
     const product = products[r.productIndex]
+    const orderItemId = orderItemIds[r.reviewerIndex][r.productIndex] // ← pakai orderItemId
+
     await prisma.review.create({
       data: {
         productId: product.id,
         userId: user.id,
+        orderItemId, // ← tambah ini
         rating: r.rating,
         comment: r.comment,
         fit: r.fit,
