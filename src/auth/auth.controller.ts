@@ -6,7 +6,7 @@ import {
   UseGuards,
   HttpCode,
   Put,
-} from '@nestjs/common';
+} from '@nestjs/common'
 import {
   ApiTags,
   ApiBearerAuth,
@@ -15,16 +15,21 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiConflictResponse,
-} from '@nestjs/swagger';
+} from '@nestjs/swagger'
 
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
+import { AuthService } from './auth.service'
+import { RegisterDto } from './dto/register.dto'
+import { LoginDto } from './dto/login.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
+import { AuthResponseDto } from './dto/auth-response.dto'
 
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { CurrentUser } from 'src/common/decorators/current-user.decorator'
+
+// 🔥 DTO khusus avatar (lebih aman daripada pakai RegisterDto)
+class UpdateAvatarDto {
+  avatarUrl!: string
+}
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -47,23 +52,7 @@ export class AuthController {
     description: 'Validation failed',
   })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.auth.register(dto);
-  }
-
-  // ================= UPDATE AVATAR =================
-  @Put('update-avatar')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user avatar' })
-  @ApiResponse({
-    status: 200,
-    description: 'Avatar updated successfully',
-  })
-  async updateAvatar(
-    @CurrentUser() user: any,
-    @Body() data: Partial<RegisterDto>,
-  ) {
-    return this.auth.updateProfile(user.id, data);
+    return this.auth.register(dto)
   }
 
   // ================= LOGIN =================
@@ -82,7 +71,7 @@ export class AuthController {
     description: 'Validation failed',
   })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.auth.login(dto);
+    return this.auth.login(dto)
   }
 
   // ================= ME =================
@@ -98,7 +87,23 @@ export class AuthController {
     description: 'Unauthorized',
   })
   async me(@CurrentUser() user: any) {
-    return this.auth.me(user.id);
+    return this.auth.me(user.id)
+  }
+
+  // ================= UPDATE AVATAR =================
+  @Put('avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user avatar' })
+  @ApiResponse({
+    status: 200,
+    description: 'Avatar updated successfully',
+  })
+  async updateAvatar(
+    @CurrentUser() user: any,
+    @Body() dto: UpdateAvatarDto,
+  ) {
+    return this.auth.updateAvatar(user.id, dto.avatarUrl)
   }
 
   // ================= REFRESH =================
@@ -122,7 +127,7 @@ export class AuthController {
     description: 'Invalid or expired refresh token',
   })
   async refresh(@Body() dto: RefreshTokenDto) {
-    return this.auth.refresh(dto.refresh_token);
+    return this.auth.refresh(dto.refresh_token)
   }
 
   // ================= LOGOUT =================
@@ -139,6 +144,6 @@ export class AuthController {
     },
   })
   async logout(@Body() dto: RefreshTokenDto) {
-    return this.auth.logout(dto.refresh_token);
+    return this.auth.logout(dto.refresh_token)
   }
 }
