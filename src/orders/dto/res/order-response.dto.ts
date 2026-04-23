@@ -1,52 +1,104 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { OrderStatus } from 'src/generated/prisma/client';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { OrderStatus, FitType } from 'src/generated/prisma/client';
 
-export class OrderItemDto {
-  @ApiProperty({ example: 'item-uuid' })
+export class OrderReviewDto {
+  @ApiProperty({ example: '714e3324-693e-410e-89af-7ea4b7043bae' })
   id!: string;
 
-  @ApiProperty({ example: 'order-uuid' })
-  orderId!: string;
-
-  @ApiProperty({ example: 'product-uuid' })
+  @ApiProperty({ example: '2461c48c-36e9-4a61-a2fa-22e0a0c2a6cf' })
   productId!: string;
 
-  @ApiProperty({ example: 'Winter Hiking Jacket' })
+  @ApiProperty({ example: '52765681-235c-48f3-b711-11cdad4d3336' })
+  userId!: string;
+
+  @ApiProperty({ example: '3d864871-47ac-45c2-ae05-32cea49f9c4c' })
+  orderItemId!: string;
+
+  @ApiProperty({ example: 5 })
+  rating!: number;
+
+  @ApiProperty({
+    example: 'Kebayanya indah banget, sulamannya halus dan detail.',
+  })
+  comment!: string;
+
+  @ApiProperty({ enum: FitType, example: 'true' })
+  fit!: string;
+
+  @ApiProperty({ example: 84 })
+  bustCm!: number;
+
+  @ApiProperty({ example: 68 })
+  waistCm!: number;
+
+  @ApiProperty({ example: 89 })
+  hipsCm!: number;
+
+  @ApiProperty({ type: [String], example: [] })
+  mediaUrls!: string[];
+
+  @ApiProperty({ example: 0 })
+  helpfulCount!: number;
+
+  @ApiProperty({ example: false })
+  isEdited!: boolean;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  @ApiProperty()
+  updatedAt!: Date;
+}
+
+export class OrderItemDto {
+  @ApiProperty({ example: '3d864871-47ac-45c2-ae05-32cea49f9c4c' })
+  id!: string;
+
+  @ApiProperty({ example: 'fefb2e8a-57e3-457b-98e2-a5b10beac7c4' })
+  orderId!: string;
+
+  @ApiProperty({ example: '2461c48c-36e9-4a61-a2fa-22e0a0c2a6cf' })
+  productId!: string;
+
+  @ApiProperty({ example: 'Embroidered Kebaya' })
   productName!: string;
 
-  @ApiProperty({ example: 'M' })
+  @ApiProperty({ example: 'XS' })
   size!: string;
 
   @ApiProperty({ example: 1 })
   quantity!: number;
 
-  @ApiProperty({ example: '2024-12-25T00:00:00.000Z' })
+  @ApiProperty({ example: '2026-01-10T00:00:00.000Z' })
   startDate!: Date;
 
   @ApiProperty({ example: 3 })
   rentalDays!: number;
 
-  @ApiProperty({ example: '2024-12-27T00:00:00.000Z' })
+  @ApiProperty({ example: '2026-01-13T00:00:00.000Z' })
   endDate!: Date;
 
-  @ApiProperty({ example: 105000 })
+  @ApiProperty({ example: 600000 })
   subtotal!: number;
+
+  @ApiPropertyOptional({ type: OrderReviewDto })
+  review?: OrderReviewDto;
 }
 
 export class OrderDetailDto {
-  @ApiProperty({ example: 'order-uuid' })
+  @ApiProperty({ example: 'fefb2e8a-57e3-457b-98e2-a5b10beac7c4' })
   id!: string;
 
-  @ApiProperty({ example: 'user-uuid' })
+  @ApiProperty({ example: '52765681-235c-48f3-b711-11cdad4d3336' })
   userId!: string;
 
   @ApiProperty({ enum: OrderStatus, example: 'COMPLETED' })
   status!: OrderStatus;
 
-  @ApiProperty({ example: '123 Adventure Lane, Cityville' })
+  @ApiProperty({ example: 'Jl. Contoh No. 1, Jakarta' })
   shippingAddress!: string;
 
-  @ApiProperty({ example: 'JNE Regular (2–3 days)' })
+  @ApiProperty({ example: 'JNE Regular (2-3 days)' })
   courierLabel!: string;
 
   @ApiProperty({ example: 'REG' })
@@ -55,7 +107,7 @@ export class OrderDetailDto {
   @ApiProperty({ example: 18000 })
   shippingCost!: number;
 
-  @ApiProperty({ example: 123000 })
+  @ApiProperty({ example: 618000 })
   total!: number;
 
   @ApiProperty()
@@ -84,15 +136,20 @@ class PaginationMetaDto {
   @ApiProperty({ example: 50 }) total!: number;
 }
 
-export class GetOrdersResponseDto {
-  @ApiProperty({ example: true })
-  success!: boolean;
-
+class PaginatedOrdersDto {
   @ApiProperty({ type: [OrderDetailDto] })
   data!: OrderDetailDto[];
 
   @ApiProperty({ type: PaginationMetaDto })
   meta!: PaginationMetaDto;
+}
+
+export class GetOrdersResponseDto {
+  @ApiProperty({ example: true })
+  success!: boolean;
+
+  @ApiProperty({ type: PaginatedOrdersDto })
+  data!: PaginatedOrdersDto;
 }
 
 // 3. Response for GET /orders/:id
