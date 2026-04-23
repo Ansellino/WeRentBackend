@@ -134,6 +134,8 @@ model OrderItem {
  
   order   Order   @relation(fields:[orderId], references:[id], onDelete:Cascade)
   product Product @relation(fields:[productId], references:[id])
+
+  review  Review? 
 }
  
 // ── Review ───────────────────────────────────────────────────
@@ -141,6 +143,7 @@ model Review {
   id          String   @id @default(uuid())
   productId   String
   userId      String
+  orderItemId String
   rating      Int
   comment     String
   fit         FitType
@@ -155,9 +158,11 @@ model Review {
  
   product  Product         @relation(fields:[productId], references:[id])
   user     User            @relation(fields:[userId], references:[id])
+  orderItem OrderItem      @relation(fields: [orderItemId], references: [id])
+
   helpfuls ReviewHelpful[]
  
-  @@unique([productId, userId])  // one review per user per product
+  @@unique([orderItemId])  // ensures a user can only review a product they rented (one review per order item)
 }
  
 model ReviewHelpful {

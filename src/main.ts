@@ -28,7 +28,7 @@ function getAllowedOrigins(): string[] {
     ...collectOriginsFromEnv(process.env.CORS_ORIGINS),
   ].map(normalizeOrigin);
 
-  const localDevOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const localDevOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'];
 
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) {
