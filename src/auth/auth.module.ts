@@ -16,17 +16,18 @@ import { PrismaService } from 'src/prisma/prisma.service'
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): JwtModuleOptions => {
-        const secret = config.get<string>('JWT_SECRET')
-        if (!secret) {
-          throw new Error('JWT_SECRET is not defined')
-        }
+        const secret = config.get<string>('JWT_ACCESS_SECRET')
 
-        const expiresIn = config.get<string>('JWT_EXPIRES_IN') ?? '7d'
+        if (!secret) {
+          throw new Error('JWT_ACCESS_SECRET is not defined')
+        }
 
         return {
           secret,
           signOptions: {
-            expiresIn: expiresIn as SignOptions['expiresIn'],
+            expiresIn:
+              (config.get<string>('JWT_ACCESS_EXPIRES_IN') ??
+                '15m') as SignOptions['expiresIn'],
           },
         }
       },
